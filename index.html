@@ -139,6 +139,16 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:30px 0 10px;}
 .modal-close{background:none;border:none;font-size:22px;color:var(--muted);cursor:pointer;line-height:1;}
 .modal-close:hover{color:var(--red);}
 .modal-body{padding:16px 22px 22px;max-height:70vh;overflow-y:auto;}
+
+/* pie chart hover */
+.pie-slice{cursor:pointer;transition:opacity .1s, filter .1s;}
+.pie-slice:hover{opacity:0.85;filter:brightness(1.06);}
+#chartTooltip{
+  position:fixed;pointer-events:none;background:var(--navy);color:#fff;
+  padding:7px 12px;border-radius:8px;font-size:12.5px;font-weight:600;
+  box-shadow:0 6px 18px rgba(0,0,0,.25);z-index:200;display:none;white-space:nowrap;
+}
+#chartTooltip .tt-sub{font-weight:400;color:#B8C4D2;font-size:11px;margin-top:2px;}
 </style>
 </head>
 <body>
@@ -188,6 +198,8 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:30px 0 10px;}
   </div>
 </div>
 
+<div id="chartTooltip"></div>
+
 <div class="main">
 
   <!-- ===== PAGE: OVERVIEW ===== -->
@@ -227,6 +239,26 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:30px 0 10px;}
             <button class="jpg-btn" data-jpg-target="deptBarsCardOv">⬇ บันทึก JPG</button>
           </div>
           <div id="deptBarsOverview"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>สัดส่วนรายการ</h2>
+      <div class="grid2">
+        <div class="card" id="pieCategoryCard">
+          <div class="card-head">
+            <div class="card-title" style="margin-bottom:0;">สัดส่วนรายการทั้งหมด แยกตามหมวด</div>
+            <button class="jpg-btn" data-jpg-target="pieCategoryCard">⬇ บันทึก JPG</button>
+          </div>
+          <div id="pieCategory"></div>
+        </div>
+        <div class="card" id="pieDeptCard">
+          <div class="card-head">
+            <div class="card-title" style="margin-bottom:0;">สัดส่วนรายการทั้งหมด แยกตามแผนก</div>
+            <button class="jpg-btn" data-jpg-target="pieDeptCard">⬇ บันทึก JPG</button>
+          </div>
+          <div id="pieDept"></div>
         </div>
       </div>
     </div>
@@ -464,10 +496,54 @@ function buildDeptBars(container, entries){
   });
 }
 
+// ---------- donut/pie chart builder ----------
+const PIE_COLORS = ['#8CA9C9','#EFAD6B','#8FBF9F','#D98C8C','#B79BC7','#7FC4C4',
+                     '#E0C36A','#9FB3D9','#C98F6A','#7FA88A','#D9A6C2','#A3A8B8',
+                     '#C9B27F','#8AB8D9'];
+function buildDonutSVG(labels, values, opts){
+  opts = opts || {};
+  const size = opts.size || 240;
+  const cx = size/2, cy = size/2;
+  const rOuter = size/2 - 6;
+  const rInner = rOuter * (opts.innerRatio || 0.58);
+  const total = values.reduce((a,b) => a+b, 0) || 1;
+  let angleStart = -Math.PI/2;
+  let paths = '';
+  const items = labels.map((l,i) => ({label:l, value:values[i], color: PIE_COLORS[i % PIE_COLORS.length]}));
+  items.forEach(item => {
+    const frac = item.value / total;
+    const angleEnd = angleStart + frac * 2 * Math.PI;
+    const x1o = cx + rOuter*Math.cos(angleStart), y1o = cy + rOuter*Math.sin(angleStart);
+    const x2o = cx + rOuter*Math.cos(angleEnd), y2o = cy + rOuter*Math.sin(angleEnd);
+    const x1i = cx + rInner*Math.cos(angleEnd), y1i = cy + rInner*Math.sin(angleEnd);
+    const x2i = cx + rInner*Math.cos(angleStart), y2i = cy + rInner*Math.sin(angleStart);
+    const largeArc = (angleEnd - angleStart) > Math.PI ? 1 : 0;
+    if(frac > 0){
+      paths += `<path class="pie-slice" data-label="${item.label.replace(/"/g,'&quot;')}" data-value="${item.value}" data-pct="${((frac)*100).toFixed(1)}" d="M ${x1o} ${y1o} A ${rOuter} ${rOuter} 0 ${largeArc} 1 ${x2o} ${y2o} L ${x1i} ${y1i} A ${rInner} ${rInner} 0 ${largeArc} 0 ${x2i} ${y2i} Z" fill="${item.color}" stroke="#fff" stroke-width="1.5"/>`;
+    }
+    angleStart = angleEnd;
+  });
+  const svg = `<svg viewBox="0 0 ${size} ${size}" style="width:100%;max-width:${size}px;height:auto;display:block;margin:0 auto;">
+    ${paths}
+    <text x="${cx}" y="${cy-4}" text-anchor="middle" font-size="20" font-weight="700" fill="#132436">${total.toLocaleString()}</text>
+    <text x="${cx}" y="${cy+16}" text-anchor="middle" font-size="11" fill="#888">รายการ</text>
+  </svg>`;
+  const legend = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px 14px;margin-top:14px;font-size:11.5px;color:#444;">
+    ${items.map(item => `<span style="display:flex;align-items:center;gap:6px;overflow:hidden;">
+      <span style="width:9px;height:9px;border-radius:2px;background:${item.color};flex-shrink:0;"></span>
+      <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${item.label}</span>
+      <span style="color:#999;flex-shrink:0;">${((item.value/total)*100).toFixed(1)}%</span>
+    </span>`).join('')}
+  </div>`;
+  return svg + legend;
+}
+
 // ---- render: overview page ----
 try {
   document.getElementById('catChartOverview').innerHTML = buildBarChartSVG(catLabels, catTotals, catDones, {width:520, height:260});
   buildDeptBars(document.getElementById('deptBarsOverview'), deptEntries);
+  document.getElementById('pieCategory').innerHTML = buildDonutSVG(catLabels, catTotals, {size:230});
+  document.getElementById('pieDept').innerHTML = buildDonutSVG(deptEntries.map(e=>e[0]), deptEntries.map(e=>e[1].total), {size:230});
 } catch(err){ console.error(err); }
 
 // ---- render: by-category page ----
@@ -722,8 +798,43 @@ document.querySelectorAll('.jpg-btn').forEach(btn => {
       exportDeptBarsAsJPG(deptEntries, 'นำเข้าจริงตามแผนก', 'นำเข้าจริงแล้ว ต่อ แผนก (รายการ)');
     } else if(targetId === 'deptBarsCardFull'){
       exportDeptBarsAsJPG(deptEntries, 'นำเข้าจริงตามแผนก_เต็ม', 'นำเข้าจริงแล้ว ต่อ แผนก (รายการ, เรียงจากมากไปน้อย)');
+    } else if(targetId === 'pieCategoryCard'){
+      const svg = document.querySelector('#pieCategory svg');
+      if(svg) svgToCanvasAndDownload(svg, 'สัดส่วนตามหมวด', {titleText:'สัดส่วนรายการทั้งหมด แยกตามหมวด'});
+    } else if(targetId === 'pieDeptCard'){
+      const svg = document.querySelector('#pieDept svg');
+      if(svg) svgToCanvasAndDownload(svg, 'สัดส่วนตามแผนก', {titleText:'สัดส่วนรายการทั้งหมด แยกตามแผนก'});
     }
   });
+});
+
+// ---------- pie chart hover tooltip ----------
+const chartTooltip = document.getElementById('chartTooltip');
+document.addEventListener('mouseover', (e) => {
+  const slice = e.target.closest('.pie-slice');
+  if(!slice) return;
+  const label = slice.dataset.label;
+  const value = Number(slice.dataset.value).toLocaleString();
+  const pct = slice.dataset.pct;
+  chartTooltip.innerHTML = `${label}<div class="tt-sub">${value} รายการ · ${pct}%</div>`;
+  chartTooltip.style.display = 'block';
+});
+document.addEventListener('mousemove', (e) => {
+  if(chartTooltip.style.display !== 'block') return;
+  const pad = 14;
+  let x = e.clientX + pad;
+  let y = e.clientY + pad;
+  const ttRect = chartTooltip.getBoundingClientRect();
+  if(x + ttRect.width > window.innerWidth - 10) x = e.clientX - ttRect.width - pad;
+  if(y + ttRect.height > window.innerHeight - 10) y = e.clientY - ttRect.height - pad;
+  chartTooltip.style.left = x + 'px';
+  chartTooltip.style.top = y + 'px';
+});
+document.addEventListener('mouseout', (e) => {
+  const slice = e.target.closest('.pie-slice');
+  if(!slice) return;
+  if(e.relatedTarget && e.relatedTarget.closest('.pie-slice') === slice) return;
+  chartTooltip.style.display = 'none';
 });
 
 } catch (err) {
