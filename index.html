@@ -222,6 +222,17 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:30px 0 10px;}
     </div>
 
     <div class="section">
+      <h2>ภาพรวมทั้งหมด</h2>
+      <div class="card" id="totalChartCardOv" style="max-width:360px;">
+        <div class="card-head">
+          <div class="card-title" style="margin-bottom:0;">แผน vs เกิดจริง (รวมทั้งหมด)</div>
+          <button class="jpg-btn" data-jpg-target="totalChartCardOv">⬇ บันทึก JPG</button>
+        </div>
+        <div id="totalChartOverview"></div>
+      </div>
+    </div>
+
+    <div class="section">
       <h2>ความคืบหน้าตามหมวดและแผนก</h2>
       <div class="grid2">
         <div class="card" id="catChartCardOv">
@@ -460,7 +471,11 @@ function buildBarChartSVG(labels, totals, dones, opts){
     }
     bars += `<rect class="chart-el" data-label="${label.replace(/"/g,'&quot;')}" data-total="${totals[i]}" data-done="${dones[i]}" x="${groupX-groupW/2}" y="${padT}" width="${groupW}" height="${chartH}" fill="transparent"/>`;
     const short = label.length > (opts.labelLen||16) ? label.slice(0,(opts.labelLen||16))+'…' : label;
-    axisLabels += `<text x="${groupX}" y="${H-padB+16}" font-size="${opts.axisFontSize||9}" fill="#888" text-anchor="end" transform="rotate(-30 ${groupX} ${H-padB+16})">${short}</text>`;
+    if(opts.noRotateAxis){
+      axisLabels += `<text x="${groupX}" y="${H-padB+18}" font-size="${opts.axisFontSize||9}" fill="#888" text-anchor="middle">${short}</text>`;
+    } else {
+      axisLabels += `<text x="${groupX}" y="${H-padB+16}" font-size="${opts.axisFontSize||9}" fill="#888" text-anchor="end" transform="rotate(-30 ${groupX} ${H-padB+16})">${short}</text>`;
+    }
   });
 
   return `
@@ -544,6 +559,7 @@ function buildDonutSVG(labels, values, opts){
 
 // ---- render: overview page ----
 try {
+  document.getElementById('totalChartOverview').innerHTML = buildBarChartSVG(['รวมทั้งหมด'], [total], [done], {width:300, height:260, maxBarW:70, padB:36, axisFontSize:12, noRotateAxis:true});
   document.getElementById('catChartOverview').innerHTML = buildBarChartSVG(catLabels, catTotals, catDones, {width:520, height:260, axisFontSize:7.5, labelLen:14});
   buildDeptBars(document.getElementById('deptBarsOverview'), deptEntries);
   document.getElementById('pieCategory').innerHTML = buildDonutSVG(catLabels, catTotals, {size:230});
@@ -795,7 +811,10 @@ function exportDeptBarsAsJPG(entries, filename, titleText){
 document.querySelectorAll('.jpg-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     const targetId = btn.dataset.jpgTarget;
-    if(targetId === 'catChartCardOv'){
+    if(targetId === 'totalChartCardOv'){
+      const svg = document.querySelector('#totalChartOverview svg');
+      if(svg) svgToCanvasAndDownload(svg, 'แผนvsเกิดจริง_รวมทั้งหมด', {titleText:'แผน vs เกิดจริง (รวมทั้งหมด)'});
+    } else if(targetId === 'catChartCardOv'){
       const svg = document.querySelector('#catChartOverview svg');
       if(svg) svgToCanvasAndDownload(svg, 'จำนวนรายการตามหมวด', {titleText:'จำนวนรายการ: แผน vs เกิดจริง (แยกตามหมวด)'});
     } else if(targetId === 'catChartCardFull'){
