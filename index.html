@@ -67,7 +67,8 @@ body{margin:0;background:var(--cream);color:var(--text);font-family:'Segoe UI','
 .kpi.done{border-top-color:var(--green);}
 .kpi.pending{border-top-color:var(--red);}
 .kpi.pct .num{color:var(--amber);}
-.kpis2{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:16px;}
+.kpis2{display:flex;flex-wrap:wrap;gap:16px;margin-top:16px;}
+.kpis2 .kpi{flex:1 1 260px;max-width:340px;}
 
 .section{margin-top:30px;}
 .section h2{font-size:15px;letter-spacing:.3px;text-transform:uppercase;color:var(--navy);border-bottom:2px solid var(--line);padding-bottom:8px;margin-bottom:16px;}
@@ -216,7 +217,8 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:30px 0 10px;}
       <div class="kpi pct" data-kpi="pending"><div class="num" id="kpiPct">-</div><div class="lbl">% ความคืบหน้ารวม</div><div class="hint">คลิกดูรายการ</div></div>
     </div>
     <div class="kpis2" style="grid-template-columns:repeat(3,1fr);">
-      <div class="kpi" data-kpi="usd" style="border-top-color:#2E7D32;max-width:420px;"><div class="num" id="kpiUsd" style="font-size:22px;color:#2E7D32;">-</div><div class="lbl">มูลค่าจริงรวม (USD)</div><div class="hint">คลิกดูรายการ</div></div>
+      <div class="kpi" data-kpi="all-usd" style="border-top-color:#1565C0;"><div class="num" id="kpiPlanUsd" style="font-size:22px;color:#1565C0;">-</div><div class="lbl">มูลค่ารวม (แผน) (USD)</div><div class="hint">คลิกดูรายการ</div></div>
+      <div class="kpi" data-kpi="usd" style="border-top-color:#2E7D32;max-width:420px;"><div class="num" id="kpiUsd" style="font-size:22px;color:#2E7D32;">-</div><div class="lbl">มูลค่ารวมจริง (USD)</div><div class="hint">คลิกดูรายการ</div></div>
       <div class="kpi curr-thb" data-kpi="baht" style="border-top-color:#6D4C41;"><div class="num" id="kpiBaht" style="font-size:22px;color:#6D4C41;">-</div><div class="lbl">มูลค่าจริงรวม (บาท)</div><div class="hint">คลิกดูรายการ</div></div>
       <div class="kpi curr-lak" data-kpi="kip" style="border-top-color:#00838F;"><div class="num" id="kpiKip" style="font-size:22px;color:#00838F;">-</div><div class="lbl">มูลค่าจริงรวม (กีบ)</div><div class="hint">คลิกดูรายการ</div></div>
     </div>
@@ -405,9 +407,11 @@ document.getElementById('tableSub').textContent = total.toLocaleString() + ' ร
 const totalBaht = DATA.reduce((s,r) => s + (Number(r.value_actual_baht) || 0), 0);
 const totalKip = DATA.reduce((s,r) => s + (Number(r.value_actual_kip) || 0), 0);
 const totalUsdActual = DATA.reduce((s,r) => s + (Number(r.value_actual_usd) || 0), 0);
+const totalUsdPlan = DATA.reduce((s,r) => s + (Number(r.value_plan_usd) || 0), 0);
 document.getElementById('kpiBaht').textContent = '฿ ' + totalBaht.toLocaleString(undefined,{maximumFractionDigits:0});
 document.getElementById('kpiKip').textContent = '₭ ' + totalKip.toLocaleString(undefined,{maximumFractionDigits:0});
 document.getElementById('kpiUsd').textContent = '$ ' + totalUsdActual.toLocaleString(undefined,{maximumFractionDigits:0});
+document.getElementById('kpiPlanUsd').textContent = '$ ' + totalUsdPlan.toLocaleString(undefined,{maximumFractionDigits:0});
 
 // ---------- aggregate: by category ----------
 const catMap = {};
@@ -708,6 +712,7 @@ const kpiTitles = {
   total: 'รายการทั้งหมด (แผน)',
   done: 'นำเข้าจริงแล้ว',
   pending: 'คงเหลือ / รอดำเนินการ',
+  'all-usd': 'รายการที่มีมูลค่าแผน (USD)',
   usd: 'รายการที่มีมูลค่าจริง (USD)',
   baht: 'รายการที่มีมูลค่าจริง (บาท)',
   kip: 'รายการที่มีมูลค่าจริง (กีบ)',
@@ -719,6 +724,7 @@ document.querySelectorAll('[data-kpi]').forEach(card => {
     if (kind === 'total') items = DATA;
     else if (kind === 'done') items = DATA.filter(r => r.status === 'นำเข้าแล้ว');
     else if (kind === 'pending') items = DATA.filter(r => r.status === 'รอดำเนินการ');
+    else if (kind === 'all-usd') items = DATA.filter(r => Number(r.value_plan_usd) > 0);
     else if (kind === 'usd') items = DATA.filter(r => Number(r.value_actual_usd) > 0);
     else if (kind === 'baht') items = DATA.filter(r => Number(r.value_actual_baht) > 0);
     else if (kind === 'kip') items = DATA.filter(r => Number(r.value_actual_kip) > 0);
