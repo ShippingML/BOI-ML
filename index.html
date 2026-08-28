@@ -62,6 +62,7 @@ body{margin:0;background:var(--cream);color:var(--text);font-family:'Segoe UI','
 .kpi{background:#fff;border-radius:12px;padding:18px 20px;box-shadow:0 4px 16px rgba(19,36,54,.08);border-top:4px solid var(--amber);cursor:pointer;transition:transform .12s, box-shadow .12s;}
 .kpi:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(19,36,54,.14);}
 .kpi .num{font-size:28px;font-weight:800;font-variant-numeric:tabular-nums;}
+.thb-approx{font-size:13px;font-weight:600;color:#9A9384;vertical-align:middle;}
 .kpi .lbl{font-size:12.5px;color:var(--muted);margin-top:4px;}
 .kpi .hint{font-size:10.5px;color:#B9B0A0;margin-top:6px;}
 .kpi.done{border-top-color:var(--green);}
@@ -107,7 +108,7 @@ tr:hover td{background:#FBF7EE;}
 .bar-row:last-child{border-bottom:none;}
 .bar-name{width:180px;font-size:12.5px;color:var(--text);flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .bar-track{flex:1;height:10px;background:#EFE8D8;border-radius:6px;overflow:hidden;}
-.bar-fill{height:100%;background:linear-gradient(90deg,#F5C692,#EFAD6B);border-radius:6px;}
+.bar-fill{height:100%;background:linear-gradient(90deg,#8FD19E,#4F9C63);border-radius:6px;}
 .bar-val{width:70px;text-align:right;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;}
 .count{font-size:12px;color:var(--muted);margin-left:6px;}
 footer{text-align:center;color:var(--muted);font-size:12px;padding:30px 0 10px;}
@@ -217,8 +218,8 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:30px 0 10px;}
       <div class="kpi pct" data-kpi="pending"><div class="num" id="kpiPct">-</div><div class="lbl">% ความคืบหน้ารวม</div><div class="hint">คลิกดูรายการ</div></div>
     </div>
     <div class="kpis2" style="grid-template-columns:repeat(3,1fr);">
-      <div class="kpi" data-kpi="all-usd" style="border-top-color:#1565C0;"><div class="num" id="kpiPlanUsd" style="font-size:22px;color:#1565C0;">-</div><div class="lbl">มูลค่ารวม (แผน) (USD)</div><div class="hint">คลิกดูรายการ</div></div>
-      <div class="kpi" data-kpi="usd" style="border-top-color:#2E7D32;max-width:420px;"><div class="num" id="kpiUsd" style="font-size:22px;color:#2E7D32;">-</div><div class="lbl">มูลค่ารวมจริง (USD)</div><div class="hint">คลิกดูรายการ</div></div>
+      <div class="kpi" data-kpi="all-usd" style="border-top-color:#1565C0;"><div class="num" id="kpiPlanUsd" style="font-size:22px;color:#1565C0;">- <span class="thb-approx" id="kpiPlanUsdThb"></span></div><div class="lbl">มูลค่ารวม (แผน) (USD)</div><div class="hint">คลิกดูรายการ</div></div>
+      <div class="kpi" data-kpi="usd" style="border-top-color:#2E7D32;max-width:460px;"><div class="num" id="kpiUsd" style="font-size:22px;color:#2E7D32;">- <span class="thb-approx" id="kpiUsdThb"></span></div><div class="lbl">มูลค่ารวมจริง (USD)</div><div class="hint">คลิกดูรายการ</div></div>
       <div class="kpi curr-thb" data-kpi="baht" style="border-top-color:#6D4C41;"><div class="num" id="kpiBaht" style="font-size:22px;color:#6D4C41;">-</div><div class="lbl">มูลค่าจริงรวม (บาท)</div><div class="hint">คลิกดูรายการ</div></div>
       <div class="kpi curr-lak" data-kpi="kip" style="border-top-color:#00838F;"><div class="num" id="kpiKip" style="font-size:22px;color:#00838F;">-</div><div class="lbl">มูลค่าจริงรวม (กีบ)</div><div class="hint">คลิกดูรายการ</div></div>
     </div>
@@ -244,6 +245,15 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:30px 0 10px;}
           </div>
           <div id="catChartOverview"></div>
         </div>
+        <div class="card" id="valChartCardOv">
+          <div class="card-head">
+            <div class="card-title" style="margin-bottom:0;">มูลค่าเงิน (USD): แผน vs เกิดจริง (แยกตามหมวด)</div>
+            <button class="jpg-btn" data-jpg-target="valChartCardOv">⬇ บันทึก JPG</button>
+          </div>
+          <div id="valChartOverview"></div>
+        </div>
+      </div>
+      <div class="grid2" style="margin-top:20px;">
         <div class="card" id="deptBarsCardOv">
           <div class="card-head">
             <div class="card-title" style="margin-bottom:0;">นำเข้าจริงแล้ว ต่อ แผนก (รายการ)</div>
@@ -410,8 +420,13 @@ const totalUsdActual = DATA.reduce((s,r) => s + (Number(r.value_actual_usd) || 0
 const totalUsdPlan = DATA.reduce((s,r) => s + (Number(r.value_plan_usd) || 0), 0);
 document.getElementById('kpiBaht').textContent = '฿ ' + totalBaht.toLocaleString(undefined,{maximumFractionDigits:0});
 document.getElementById('kpiKip').textContent = '₭ ' + totalKip.toLocaleString(undefined,{maximumFractionDigits:0});
-document.getElementById('kpiUsd').textContent = '$ ' + totalUsdActual.toLocaleString(undefined,{maximumFractionDigits:0});
-document.getElementById('kpiPlanUsd').textContent = '$ ' + totalUsdPlan.toLocaleString(undefined,{maximumFractionDigits:0});
+document.getElementById('kpiUsd').childNodes[0].textContent = '$ ' + totalUsdActual.toLocaleString(undefined,{maximumFractionDigits:0}) + ' ';
+document.getElementById('kpiPlanUsd').childNodes[0].textContent = '$ ' + totalUsdPlan.toLocaleString(undefined,{maximumFractionDigits:0}) + ' ';
+
+// approximate THB conversion (rate as of 28 Aug 2026, ~32.85 THB/USD — mid-market reference rate)
+const USD_TO_THB_RATE = 32.85;
+document.getElementById('kpiUsdThb').textContent = `(ประมาณ ${(totalUsdActual*USD_TO_THB_RATE).toLocaleString(undefined,{maximumFractionDigits:0})} บาท)`;
+document.getElementById('kpiPlanUsdThb').textContent = `(ประมาณ ${(totalUsdPlan*USD_TO_THB_RATE).toLocaleString(undefined,{maximumFractionDigits:0})} บาท)`;
 
 // ---------- aggregate: by category ----------
 const catMap = {};
@@ -428,8 +443,16 @@ DATA.forEach(r => {
 const catLabels = Object.keys(catMap);
 const catTotals = catLabels.map(c => catMap[c].total);
 const catDones = catLabels.map(c => catMap[c].done);
+const catValPlan = catLabels.map(c => catMap[c].valPlan);
+const catValActual = catLabels.map(c => catMap[c].valUsd);
 
 function fmtInt(n){ return Math.round(n).toLocaleString(); }
+function fmtUsdShort(n){
+  n = Number(n) || 0;
+  if(Math.abs(n) >= 1000000) return '$'+(n/1000000).toFixed(1).replace(/\.0$/,'')+'M';
+  if(Math.abs(n) >= 1000) return '$'+(n/1000).toFixed(1).replace(/\.0$/,'')+'K';
+  return '$'+Math.round(n);
+}
 
 // ---------- aggregate: by department ----------
 const deptMap = {};
@@ -468,12 +491,12 @@ function buildBarChartSVG(labels, totals, dones, opts){
     const yTotal = padT + chartH - totalH;
     const yDone = padT + chartH - doneH;
     bars += `<rect x="${x1}" y="${yTotal}" width="${barW}" height="${totalH}" fill="url(#${gradId1})" rx="5"/>`;
-    bars += `<text x="${x1+barW/2}" y="${yTotal-4}" font-size="10" fill="#7C93B0" text-anchor="middle">${totals[i]}</text>`;
+    bars += `<text x="${x1+barW/2}" y="${yTotal-4}" font-size="10" fill="#7C93B0" text-anchor="middle">${opts.fmtValue ? opts.fmtValue(totals[i]) : totals[i]}</text>`;
     bars += `<rect x="${x2}" y="${yDone}" width="${barW}" height="${Math.max(doneH,dones[i]>0?2:0)}" fill="url(#${gradId2})" rx="5"/>`;
     if(dones[i] > 0){
-      bars += `<text x="${x2+barW/2}" y="${yDone-4}" font-size="10" fill="#E0995F" text-anchor="middle">${dones[i]}</text>`;
+      bars += `<text x="${x2+barW/2}" y="${yDone-4}" font-size="10" fill="#4F9C63" text-anchor="middle">${opts.fmtValue ? opts.fmtValue(dones[i]) : dones[i]}</text>`;
     }
-    bars += `<rect class="chart-el" data-label="${label.replace(/"/g,'&quot;')}" data-total="${totals[i]}" data-done="${dones[i]}" x="${groupX-groupW/2}" y="${padT}" width="${groupW}" height="${chartH}" fill="transparent"/>`;
+    bars += `<rect class="chart-el" data-label="${label.replace(/"/g,'&quot;')}" data-total="${totals[i]}" data-done="${dones[i]}" data-fmt="${opts.fmtValue ? 'usd' : ''}" x="${groupX-groupW/2}" y="${padT}" width="${groupW}" height="${chartH}" fill="transparent"/>`;
     const short = label.length > (opts.labelLen||16) ? label.slice(0,(opts.labelLen||16))+'…' : label;
     if(opts.noRotateAxis){
       axisLabels += `<text x="${groupX}" y="${H-padB+18}" font-size="${opts.axisFontSize||9}" fill="#888" text-anchor="middle">${short}</text>`;
@@ -490,8 +513,8 @@ function buildBarChartSVG(labels, totals, dones, opts){
           <stop offset="100%" stop-color="#8CA9C9"/>
         </linearGradient>
         <linearGradient id="${gradId2}" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#F5C692"/>
-          <stop offset="100%" stop-color="#EFAD6B"/>
+          <stop offset="0%" stop-color="#8FD19E"/>
+          <stop offset="100%" stop-color="#4F9C63"/>
         </linearGradient>
       </defs>
       <line x1="${padL}" y1="${padT+chartH}" x2="${W-padR}" y2="${padT+chartH}" stroke="#E8E1D0" stroke-width="1"/>
@@ -500,7 +523,7 @@ function buildBarChartSVG(labels, totals, dones, opts){
     </svg>
     <div style="display:flex;gap:18px;justify-content:center;margin-top:6px;font-size:11.5px;color:#777;">
       <span><span style="display:inline-block;width:10px;height:10px;background:linear-gradient(180deg,#A8C0DC,#8CA9C9);border-radius:3px;margin-right:5px;"></span>แผนทั้งหมด</span>
-      <span><span style="display:inline-block;width:10px;height:10px;background:linear-gradient(180deg,#F5C692,#EFAD6B);border-radius:3px;margin-right:5px;"></span>เกิดจริง</span>
+      <span><span style="display:inline-block;width:10px;height:10px;background:linear-gradient(180deg,#8FD19E,#4F9C63);border-radius:3px;margin-right:5px;"></span>เกิดจริง</span>
     </div>`;
 }
 
@@ -565,6 +588,7 @@ function buildDonutSVG(labels, values, opts){
 try {
   document.getElementById('totalChartOverview').innerHTML = buildBarChartSVG(['รวมทั้งหมด'], [total], [done], {width:300, height:260, maxBarW:70, padB:36, axisFontSize:12, noRotateAxis:true});
   document.getElementById('catChartOverview').innerHTML = buildBarChartSVG(catLabels, catTotals, catDones, {width:520, height:260, axisFontSize:7.5, labelLen:14});
+  document.getElementById('valChartOverview').innerHTML = buildBarChartSVG(catLabels, catValPlan, catValActual, {width:520, height:260, axisFontSize:7.5, labelLen:14, fmtValue: fmtUsdShort});
   buildDeptBars(document.getElementById('deptBarsOverview'), deptEntries);
   document.getElementById('pieCategory').innerHTML = buildDonutSVG(catLabels, catTotals, {size:230});
   document.getElementById('pieDept').innerHTML = buildDonutSVG(deptEntries.map(e=>e[0]), deptEntries.map(e=>e[1].total), {size:230});
@@ -801,7 +825,7 @@ function buildDeptBarsSVGString(entries, opts){
     const shortName = name.length > 20 ? name.slice(0,20)+'…' : name;
     rows += `<text x="0" y="${y+rowH/2+4}" font-size="12" fill="#20242B">${shortName}</text>`;
     rows += `<rect x="${labelW}" y="${y+4}" width="${barAreaW}" height="${rowH-8}" rx="5" fill="#EFE8D8"/>`;
-    rows += `<rect x="${labelW}" y="${y+4}" width="${Math.max(doneW,v.done>0?4:0)}" height="${rowH-8}" rx="5" fill="#EFAD6B"/>`;
+    rows += `<rect x="${labelW}" y="${y+4}" width="${Math.max(doneW,v.done>0?4:0)}" height="${rowH-8}" rx="5" fill="#4F9C63"/>`;
     rows += `<text x="${labelW+barAreaW+8}" y="${y+rowH/2+4}" font-size="11.5" fill="#6B7280">${v.done}/${v.total}</text>`;
   });
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">${rows}</svg>`;
@@ -823,6 +847,9 @@ document.querySelectorAll('.jpg-btn').forEach(btn => {
     } else if(targetId === 'catChartCardOv'){
       const svg = document.querySelector('#catChartOverview svg');
       if(svg) svgToCanvasAndDownload(svg, 'จำนวนรายการตามหมวด', {titleText:'จำนวนรายการ: แผน vs เกิดจริง (แยกตามหมวด)'});
+    } else if(targetId === 'valChartCardOv'){
+      const svg = document.querySelector('#valChartOverview svg');
+      if(svg) svgToCanvasAndDownload(svg, 'มูลค่าเงินตามหมวด', {titleText:'มูลค่าเงิน (USD): แผน vs เกิดจริง (แยกตามหมวด)'});
     } else if(targetId === 'catChartCardFull'){
       const svg = document.querySelector('#catChartFull svg');
       if(svg) svgToCanvasAndDownload(svg, 'จำนวนรายการตามหมวด_เต็ม', {titleText:'จำนวนรายการ: แผน vs เกิดจริง'});
@@ -853,8 +880,9 @@ document.addEventListener('mouseover', (e) => {
     chartTooltip.style.display = 'block';
   } else if(bar){
     const label = bar.dataset.label;
-    const totalV = Number(bar.dataset.total).toLocaleString();
-    const doneV = Number(bar.dataset.done).toLocaleString();
+    const isUsd = bar.dataset.fmt === 'usd';
+    const totalV = isUsd ? '$'+Math.round(Number(bar.dataset.total)).toLocaleString() : Number(bar.dataset.total).toLocaleString();
+    const doneV = isUsd ? '$'+Math.round(Number(bar.dataset.done)).toLocaleString() : Number(bar.dataset.done).toLocaleString();
     chartTooltip.innerHTML = `${label}<div class="tt-sub">แผนทั้งหมด ${totalV} · เกิดจริง ${doneV}</div>`;
     chartTooltip.style.display = 'block';
   }
